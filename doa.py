@@ -8,9 +8,10 @@ import time
 
 import qtmodern.styles
 import qtmodern.windows
+
 from PyQt5 import QtCore, QtGui, uic
 from PyQt5.QtCore import QSettings, QThread, pyqtSignal, QTimer, QObject, Qt
-from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QTableWidgetItem, QHeaderView, QInputDialog
 
 from py import server_lists
@@ -36,7 +37,7 @@ def get_info(info):
 NAME = get_info("name")
 VERSION = get_info("version")
 PROJECT = f"{NAME} {VERSION}"
-ICON = f'{NAME.lower()}.ico'
+ICON = f'{str(NAME).lower()}.ico'
 
 
 class LoginInUserThread(QThread):
@@ -516,8 +517,8 @@ class Auction(QObject):
             icon.addPixmap(QtGui.QPixmap(resource_path("icons/" + str(item_type) + ".png")),
                            QtGui.QIcon.Normal, QtGui.QIcon.Off)
             #
-            icon.addPixmap(QtGui.QPixmap("icons/" + str(item_type) + ".png"), QtGui.QIcon.Normal,
-                           QtGui.QIcon.Off)
+            # icon.addPixmap(QtGui.QPixmap("icons/" + str(item_type) + ".png"), QtGui.QIcon.Normal,
+            #                QtGui.QIcon.Off)
 
             row_icons = QTableWidgetItem()
             row_icons.setIcon(icon)
