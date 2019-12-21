@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-#  www.runcode.ru
-#  Project:DOA_1.01 |  Scripts:window | Author:RUNCODE | Date: 01.06.2019
-#  ----------------------------------------------------------------
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 

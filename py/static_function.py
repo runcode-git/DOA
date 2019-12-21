@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-#  www.runcode.ru
-#  Project:DOA_1.01 |  Scripts:static_function | Author:RUNCODE | Date: 19.05.2019
-#  ----------------------------------------------------------------
 
 import threading
-# from string import printable
-# from transliterate import translit
 
 
 def thread(func):

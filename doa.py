@@ -13,25 +13,30 @@ from PyQt5.QtCore import QSettings, QThread, pyqtSignal, QTimer, QObject, Qt
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QTableWidgetItem, QHeaderView, QInputDialog
 
-
 from py import server_lists
 from py.authorize import login_user, login_sid, url_auction, user_name, parse_item_winner, post_shop
 from py.crypto import encode, decode
-from py.path_resource import PathResource
 from py.resurse_site import parse_version, load_guide
 from py.static_function import filter_int, add_zero, thread_up, thread
 
 
-def get_info(info):
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
 
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
+
+def get_info(info):
     settings = QSettings('./config/info.ini', QSettings.IniFormat)
     settings.setIniCodec('utf-8')
     return settings.value(f'Info/{info}')
 
+
 NAME = get_info("name")
 VERSION = get_info("version")
 PROJECT = f"{NAME} {VERSION}"
-ICON = f'{NAME}.ico'
+ICON = f'{NAME.lower()}.ico'
 
 
 class LoginInUserThread(QThread):
@@ -116,14 +121,9 @@ class ActionApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.path = PathResource()
 
-        try:
-            uic.loadUi('./ui/window.ui', self)
-            self.setWindowIcon(QIcon("dao.ico"))
-        except FileNotFoundError:
-            uic.loadUi(self.path.resource_path('./ui/window.ui'), self)
-            self.setWindowIcon(QtGui.QIcon(self.path.resource_path("dao.ico")))
+        uic.loadUi(resource_path('ui/window.ui'), self)
+        self.setWindowIcon(QtGui.QIcon(resource_path(ICON)))
 
         path_dir = os.getcwd()
         config = "config"
@@ -134,7 +134,7 @@ class ActionApp(QMainWindow):
         else:
             print("Successfully created the directory %s " % config)
 
-        self.setWindowTitle(VERSION)
+        self.setWindowTitle(PROJECT)
         self.settings = QSettings('config/login_config.ini', QSettings.IniFormat)
         self.settings.setIniCodec('utf-8')
         self.settings.setFallbacksEnabled(False)
@@ -370,7 +370,6 @@ class Auction(QObject):
     def __init__(self, parent=None, login=None):
         super().__init__(parent)
 
-        self.path = parent.path
         self.credit = 0
         self.credit_min = 0
         self.time_second = 0
@@ -395,7 +394,7 @@ class Auction(QObject):
         self.version_bot = parse_version()
         logging.info(f"{self.version_bot}")
         self.username = user_name(self.login)
-        self.win.setWindowTitle(f'{VERSION} | {self.username}')
+        self.win.setWindowTitle(f'{PROJECT} | {self.username}')
         self.recourse = url_auction(self.login)
 
         self.settings = QSettings(F'config/{self.username}_config.ini', QSettings.IniFormat)
@@ -451,7 +450,7 @@ class Auction(QObject):
         self.btn_donate.setStyleSheet("QPushButton {background-color: rgb(125, 102, 8); color: #ccc;}")
         self.pb.setStyleSheet("QProgressBar {font: 9pt 'Verdana'; color: #fff;}")
 
-        if VERSION != self.version_bot:
+        if PROJECT != self.version_bot:
             self.btn_update_bot.setStyleSheet("QPushButton {background-color: rgb(98, 132, 14); color: #fff}")
             self.btn_update_bot.setText(f"UPDATE {self.version_bot}")
         else:
@@ -514,9 +513,9 @@ class Auction(QObject):
 
             icon = QtGui.QIcon()
 
-            icon.addPixmap(QtGui.QPixmap(self.path.resource_path("icons/" + str(item_type) + ".png")),
+            icon.addPixmap(QtGui.QPixmap(resource_path("icons/" + str(item_type) + ".png")),
                            QtGui.QIcon.Normal, QtGui.QIcon.Off)
-
+            #
             icon.addPixmap(QtGui.QPixmap("icons/" + str(item_type) + ".png"), QtGui.QIcon.Normal,
                            QtGui.QIcon.Off)
 
