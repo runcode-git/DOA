@@ -928,9 +928,9 @@ class Auction(QObject):
     def start_update_timer(self):
         """start timer update"""
         if self.time_minute == 0 and self.time_second <= 50:
-            time_up = random.uniform(10000, 15000)
+            time_up = round(random.uniform(10000, 15000))
         else:
-            time_up = random.uniform(10000, 25000)
+            time_up = round(random.uniform(10000, 25000))
 
         print('следующее время обнавления страницы через: ' + str(time_up))
         self.table.reset()
