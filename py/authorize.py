@@ -221,4 +221,5 @@ def post_shop(auction_url, shop, loot_id, item_id, bet):
 
     url_post_shop = auction_url + shop[0]
     session.post(url_post_shop, data=parameters_shop, headers=headers, proxies=proxy)
+    print(url_post_shop, parameters_shop)
 
