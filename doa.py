@@ -1074,7 +1074,7 @@ class Auction(QObject):
 
             loot_id = self.table.item(row[1], 2).toolTip()
             item_id = 'item_hour_' + str(row[1])
-            shop = url_auction(self.login)
+            shop = url_auction(self.login, self.dir_setting)
 
             if shop[0] is None:
                 break
@@ -1095,6 +1095,7 @@ class Auction(QObject):
                 else:
                     self.start.setChecked(False)
                     self.start_on_off()
+                    logging.info('################## Auction bot caught reCaptcha ##################')  # ------ log bet --------
                     print('Stop Auction bot, reCaptcha')
                     break
 

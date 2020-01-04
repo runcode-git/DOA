@@ -196,7 +196,7 @@ def parse_shop(tree):
 def parse_item_winner(item_win, nick_win):
     """parse_item_winner"""
 
-    with open('config/auction.html', 'r', encoding='utf-8') as file:
+    with open(f'config/{nick_win}/auction.html', 'r', encoding='utf-8') as file:
         html_table = file.read()
 
     tree = html.fromstring(html_table)
