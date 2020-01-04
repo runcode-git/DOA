@@ -5,20 +5,26 @@ import os
 import random
 import sys
 import time
+import traceback
+
+from PyQt5.QtNetwork import QNetworkCookie
+from PyQt5.QtWebEngineCore import QWebEngineHttpRequest
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
 
 import qtmodern.styles
 import qtmodern.windows
 
 from PyQt5 import QtCore, QtGui, uic
-from PyQt5.QtCore import QSettings, QThread, pyqtSignal, QTimer, QObject, Qt
+from PyQt5.QtCore import QSettings, QThread, pyqtSignal, QTimer, QObject, Qt, QByteArray, QUrl
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QTableWidgetItem, QHeaderView, QInputDialog
 
 from py import server_lists
-from py.authorize import login_user, login_sid, url_auction, user_name, parse_item_winner, post_shop
+from py.authorize import login_user, login_sid, url_auction, user_name, parse_item_winner, post_shop, HEADERS
 from py.crypto import encode, decode
 from py.resurse_site import parse_version, load_guide
 from py.static_function import filter_int, add_zero, thread_up, thread
+from py.browser import Browser
 
 
 def resource_path(relative_path):
@@ -122,7 +128,6 @@ class ActionApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
-
         uic.loadUi(resource_path('ui/window.ui'), self)
         self.setWindowIcon(QtGui.QIcon(resource_path(ICON)))
 
@@ -333,7 +338,7 @@ class LoginSid:
                 self.save_setting_server()
 
             logging.info('You have successfully logged in')
-            logging.info(f'status:{login.status_code}  {login.url}')
+            logging.info(f'status:{login[0].status_code}  {login[0].url}')
             logging.info('Load the auction table')
 
             Auction(self.win, login)
@@ -391,7 +396,13 @@ class Auction(QObject):
         self.thread_block = None
 
         self.win = parent
-        self.login = login
+        self.login = login[0]
+
+        self.sid_url = login[1]
+
+        self.browser = Browser(self, self.sid_url[0], self.sid_url[1])
+        # self.browser.browser.show()
+
         self.version_bot = parse_version()
         logging.info(f"{self.version_bot}")
         self.username = user_name(self.login)
@@ -1023,7 +1034,8 @@ class Auction(QObject):
 
         # если есть объекты, то ставим ставки
         time_bet_start = random.randrange(30, 50, 1)  # рандом (начальное значение, конечное значение, шаг)
-        if int(self.time_minute) <= time_bet_start and len(self.bet_list) != 0 and self.start.isChecked():
+        # if int(self.time_minute) <= time_bet_start and len(self.bet_list) != 0 and self.start.isChecked():
+        if len(self.bet_list) != 0 and self.start.isChecked():
             print(self.bet_list)
             self.bet_run(self.bet_list)
         else:
@@ -1064,10 +1076,23 @@ class Auction(QObject):
                 break
             else:
                 url = shop[0].url
-                post_shop(url, shop[5], loot_id, item_id, int(bet))
 
-                print('Ставим ставку', row[0], item_id, bet)
-                logging.info('Bet on ' + row[0] + ' : ' + str(bet))  # ------ log bet --------
+                if not self.browser.status_recaptcha:
+
+                    print(self.browser.status_recaptcha)
+                    self.browser.bet = bet
+                    self.browser.loot_id = loot_id
+                    self.browser.item_id = item_id
+
+                    self.browser.reload_page()
+                    print('Ставим ставку', row[0], item_id, bet)
+                    logging.info('Bet on ' + row[0] + ' : ' + str(bet))  # ------ log bet --------
+
+                else:
+                    self.start.setChecked(False)
+                    self.start_on_off()
+                    print('Stop Auction bot, reCaptcha')
+                    break
 
             bet = None
         # запускаем  таймер обновление таблицы
@@ -1167,7 +1192,7 @@ class LoggerAuction(QObject, logging.Handler):
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QApplication([sys.argv, "--disable-web-security"])
     qtmodern.styles.dark(app)
     window = ActionApp()
     window.show()

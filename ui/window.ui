@@ -44,22 +44,7 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_5">
-    <property name="spacing">
-     <number>6</number>
-    </property>
-    <property name="leftMargin">
-     <number>5</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>5</number>
-    </property>
-    <property name="bottomMargin">
-     <number>5</number>
-    </property>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
@@ -748,8 +733,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>724</width>
-          <height>176</height>
+          <width>716</width>
+          <height>163</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="gridLayout_4">

@@ -13,18 +13,18 @@ proxy = {
     # 'http': 'http://87.103.234.116:3128',
     # 'https': 'https:/91.208.39.70:8080'
 }
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                  'Chrome/79.0.3945.88 Safari/537.36'
+}
 
 session = requests.Session()
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/60.0.3112.113 Safari/537.36 '
-}
 
 
 def parse_url_token():
     """парсим страницу и находим токен сессии"""
     try:
-        get_html = session.get(url_game, headers=headers, proxies=proxy)
+        get_html = session.get(url_game, headers=HEADERS, proxies=proxy)
         tree = html.fromstring(get_html.text)
         token = tree.xpath('//form[@class = "bgcdw_login_form"]/@action')[0]
         return token
@@ -40,7 +40,7 @@ def login_user(user, password):
     }
     # делаем пост запрос на вход
     if parse_url_token():
-        post = session.post(parse_url_token(), data=parameters, headers=headers, proxies=proxy)
+        post = session.post(parse_url_token(), data=parameters, headers=HEADERS, proxies=proxy)
         server_url = post.url[post.url.index("https"):post.url.index("com") + len("com")]
         try_url = server_url + '/indexInternal.es?action=internalStart&prc=100'
         if post.url == try_url:
@@ -48,7 +48,8 @@ def login_user(user, password):
             logging.info('You have successfully logged in')
             print(post.status_code)
             print(post.url)
-            return post
+            sid_url = parse_sid(html.fromstring(post.text), server_url)
+            return post, sid_url
         else:
             print(post.url)
             print('=================')
@@ -62,13 +63,14 @@ def login_sid(server, sid):
     """вход sid"""
     try:
         link = 'https://' + server + '.darkorbit.com/indexInternal.es?action=internalStart&prc=100'
-        login = session.get(link, cookies={'dosid': sid}, headers=headers, proxies=proxy)
+        login = session.get(link, cookies={'dosid': sid}, headers=HEADERS, proxies=proxy)
         server_url = link[link.index("https"):link.index("com") + len("com")]
         try_url = server_url + '/indexInternal.es?action=internalStart&prc=100'
         if login.url == try_url:
             print(login.status_code)
             print(login.url)
-            return login
+            sid_url = [sid, server_url]
+            return login, sid_url
         else:
             print(login.url)
             print('=================')
@@ -78,11 +80,27 @@ def login_sid(server, sid):
         return None
 
 
+def parse_sid(tree, url):
+    """parse user credit"""
+
+    scripts = tree.xpath('//script')
+    for script in scripts:
+        item = script.text
+        try:
+            if 'dosid=' in str(etree.tostring(script)):
+                sid = item[item.index("dosid=") + 6:item.index("';")]
+                # print(sid, url)
+                return sid, url
+
+        except ValueError:
+            pass
+
+
 def url_auction(post):
     try:
         auction_url = post.url[post.url.index("https"):post.url.index("com") + len("com")]
         auction_url += '/indexInternal.es?action=internalAuction'
-        auction_url = session.get(auction_url, headers=headers, proxies=proxy)
+        auction_url = session.get(auction_url, headers=HEADERS, proxies=proxy)
 
         if auction_url.status_code == 200:
             logging.info('Load the auction table')
@@ -220,6 +238,5 @@ def post_shop(auction_url, shop, loot_id, item_id, bet):
     }
 
     url_post_shop = auction_url + shop[0]
-    session.post(url_post_shop, data=parameters_shop, headers=headers, proxies=proxy)
+    session.post(url_post_shop, data=parameters_shop, headers=HEADERS, proxies=proxy)
     print(url_post_shop, parameters_shop)
-
