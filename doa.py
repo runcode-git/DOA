@@ -75,13 +75,14 @@ class LoginInSidThread(QThread):
 class UpdateTable(QThread):
     signal_update_table = pyqtSignal(object)
 
-    def __init__(self, login):
+    def __init__(self, login, dir_setting):
         super().__init__()
 
         self.login = login
+        self.dir_setting = dir_setting
 
     def run(self):
-        recourse = url_auction(self.login)
+        recourse = url_auction(self.login, self.dir_setting)
         self.signal_update_table.emit(recourse)
 
 
@@ -407,9 +408,12 @@ class Auction(QObject):
         logging.info(f"{self.version_bot}")
         self.username = user_name(self.login)
         self.win.setWindowTitle(f'{PROJECT} | {self.username}')
-        self.recourse = url_auction(self.login)
 
-        self.settings = QSettings(F'config/{self.username}_config.ini', QSettings.IniFormat)
+        self.dir_setting = F'config/{self.username}/'
+        self.recourse = url_auction(self.login, self.dir_setting)
+
+        self.dir_setting = F'config/{self.username}/'
+        self.settings = QSettings(F'{self.dir_setting}{self.username}_config.ini', QSettings.IniFormat)
         self.settings.setIniCodec('utf-8')
         self.settings.setFallbacksEnabled(False)
 
@@ -621,7 +625,7 @@ class Auction(QObject):
 
     def update_table_thread(self):
         if not self.thread_up:
-            self.thread_up = UpdateTable(self.login)
+            self.thread_up = UpdateTable(self.login, self.dir_setting)
             self.thread_up.signal_update_table.connect(self.table_shop)
             self.thread_up.finished.connect(self.on_finished_up)
             self.thread_up.start()
@@ -1034,8 +1038,8 @@ class Auction(QObject):
 
         # если есть объекты, то ставим ставки
         time_bet_start = random.randrange(30, 50, 1)  # рандом (начальное значение, конечное значение, шаг)
-        # if int(self.time_minute) <= time_bet_start and len(self.bet_list) != 0 and self.start.isChecked():
-        if len(self.bet_list) != 0 and self.start.isChecked():
+        if int(self.time_minute) <= time_bet_start and len(self.bet_list) != 0 and self.start.isChecked():
+            # if len(self.bet_list) != 0 and self.start.isChecked():
             print(self.bet_list)
             self.bet_run(self.bet_list)
         else:

@@ -96,7 +96,7 @@ def parse_sid(tree, url):
             pass
 
 
-def url_auction(post):
+def url_auction(post, dir_setting):
     try:
         auction_url = post.url[post.url.index("https"):post.url.index("com") + len("com")]
         auction_url += '/indexInternal.es?action=internalAuction'
@@ -104,7 +104,7 @@ def url_auction(post):
 
         if auction_url.status_code == 200:
             logging.info('Load the auction table')
-            tree = save_html_read(auction_url)  # save html, read
+            tree = save_html_read(auction_url, dir_setting)  # save html, read
 
             times = parse_time(tree)  # parse time
             label = label_auction(tree)  # parse label
@@ -118,13 +118,13 @@ def url_auction(post):
         return None, None, 'Connection Error', None, [], None
 
 
-def save_html_read(auction_url):
+def save_html_read(auction_url, dir_setting):
     """сохраняем страницу аукцина """
 
-    with open("config/auction.html", 'w', encoding='utf-8') as input_file:
+    with open(f"{dir_setting}auction.html", 'w', encoding='utf-8') as input_file:
         input_file.write(auction_url.text)
 
-    with open("config/auction.html", 'r', encoding='utf-8') as input_file:
+    with open(f"{dir_setting}auction.html", 'r', encoding='utf-8') as input_file:
         html_table = input_file.read()
 
     tree = html.fromstring(html_table)
