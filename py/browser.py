@@ -2,16 +2,17 @@
 #  www.runcode.ru
 #  ---------------------------------------------------------------------------------------------------------------------
 import sys
-import threading
 import time
-import traceback
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QByteArray, QUrl, QUrlQuery, pyqtSlot
 from PyQt5.QtNetwork import QNetworkCookie
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings, QWebEnginePage, QWebEngineScript
 from PyQt5.QtWebEngineCore import QWebEngineHttpRequest
-from lxml import html
+from PyQt5.QtWidgets import QApplication, QMessageBox, QDialog
+from lxml import html, etree
+
+from py.static_function import thread
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -19,28 +20,17 @@ HEADERS = {
 }
 
 
-def thread(func):
-    """функция потоков"""
-
-    def wrapper(*args, **kwargs):
-        """потоки"""
-        my_thread = threading.Thread(target=func, args=args, kwargs=kwargs)
-        my_thread.start()
-
-    return wrapper
-
-
-class Browser:
+class Browser(QWebEngineView):
     """class auction, Browser"""
 
     def __init__(self, parent, sid, url):
+        super().__init__()
         self.url = url
         self.sid = sid
         self.request = QWebEngineHttpRequest()
-        self.browser = QWebEngineView()
-        self.user_agent = self.browser.page().profile().defaultProfile()
+        self.user_agent = self.page().profile().defaultProfile()
 
-        self.status_recaptcha = False
+        self.status_captcha = False
         self.loot_id = None
         self.item_id = None
         self.bet = None
@@ -48,30 +38,29 @@ class Browser:
         self.init_browser()
 
     def init_browser(self):
-        self.browser.setFixedSize(1350, 800)
+        self.setFixedSize(1350, 800)
         from doa import resource_path, ICON
-        self.browser.setWindowIcon(QtGui.QIcon(resource_path(ICON)))
-        self.browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self.setWindowIcon(QtGui.QIcon(resource_path(ICON)))
+        self.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
 
         self.load_auction()
 
     def load_auction(self):
         self.user_agent.setHttpUserAgent(HEADERS['User-Agent'])
         cookie = QNetworkCookie(b'dosid', QByteArray(self.sid.encode()))
-        self.browser.page().profile().cookieStore().setCookie(cookie, QUrl(self.url))
+        self.page().profile().cookieStore().setCookie(cookie, QUrl(self.url))
 
         url_auction = f'{self.url}//indexInternal.es?action=internalAuction'
-        self.browser.setWindowTitle(url_auction)
+        self.setWindowTitle(url_auction)
         self.request.setUrl(QtCore.QUrl(url_auction))
 
-        self.browser.page().load(self.request)
+        self.page().load(self.request)
 
     @thread
     def reload_page(self):
-        self.browser.page().toHtml(self.parse_shop)
+        self.page().toHtml(self.parse_shop)
 
     def parse_shop(self, view_html):
-
         tree = html.fromstring(view_html)
         url_token = tree.xpath('//form[@name="placeBid"]/@action')[0]
         auction_type = tree.xpath('//input[@name="auctionType"]/@value')[0]
@@ -81,33 +70,6 @@ class Browser:
         shop = [url_token, auction_type, sub_action, buy_button]
 
         self.post_shop(shop, self.loot_id, self.item_id, self.bet)
-
-    def load_html(self):
-        self.browser.page().toHtml(self.parse_recaptcha)
-
-    def parse_recaptcha(self, view_html):
-        tree = html.fromstring(view_html)
-        recaptcha = tree.xpath('//form[@id="captchaCheckForm"]')
-
-        # site_key = tree.xpath('//div[@class="g-recaptcha recaptcha-holding-div"]')[0].attrib['data-sitekey']
-        # print('[+]site_key: ' + site_key)
-
-        if recaptcha:
-            self.status_recaptcha = True
-            if not self.browser.show():
-                self.browser.show()
-            self.browser.page().runJavaScript("""
-            document.querySelector('[role="presentation"]').contentWindow.document.getElementById("recaptcha-anchor").click();
-
-            setTimeout(function(){
-                if (document.querySelectorAll('iframe')[1] == undefined){
-                    document.querySelector('.button.button-green').click();
-                } 
-            //document.querySelectorAll('iframe')[1].contentWindow.document.getElementById("recaptcha-audio-button").click()
-            },3000)
-            """)
-            self.browser.close()
-            self.status_recaptcha = False
 
     def post_shop(self, shop, loot_id, item_id, bet):
         """post auction"""
@@ -128,6 +90,35 @@ class Browser:
         self.request.setHeader(b'Content-Type', b'application/x-www-form-urlencoded')
         self.request.setPostData(QByteArray(post_data.toString(QUrl.FullyEncoded).encode()))
         self.request.setUrl(QtCore.QUrl(url))
-        self.browser.load(self.request)
+        self.load(self.request)
 
-        self.load_html()
+        print("роверяем на странице капчу =====>>>>>")
+
+        self.captcha_check()
+
+    def captcha_check(self):
+        self.page().toHtml(self.parse_captcha)
+
+    def parse_captcha(self, view_html):
+        tree = html.fromstring(view_html)
+        captcha = tree.xpath('//form[@id="captchaCheckForm"]')
+
+        if captcha:
+            self.status_captcha = True
+            if not self.show():
+                self.show()
+
+            QMessageBox.information(self, "reCaptcha",
+                                        "Unfortunately, the bot caught the captcha, solve it and close the browser window.")
+
+    def closeEvent(self, event):
+        """exit application """
+        close = QMessageBox.question(self, "Quit Browser",
+                                     "If you decide to captcha, then close the window, and click Start.",
+                                     QMessageBox.Yes | QMessageBox.No)
+
+        if close == QMessageBox.Yes:
+            self.status_captcha = False
+            event.accept()
+        else:
+            event.ignore()

@@ -132,15 +132,6 @@ class ActionApp(QMainWindow):
         uic.loadUi(resource_path('ui/window.ui'), self)
         self.setWindowIcon(QtGui.QIcon(resource_path(ICON)))
 
-        path_dir = os.getcwd()
-        config = "config"
-        try:
-            os.mkdir(f'{path_dir}/{config}')
-        except OSError:
-            print("Creation of the directory %s failed" % config)
-        else:
-            print("Successfully created the directory %s " % config)
-
         self.setWindowTitle(PROJECT)
         self.settings = QSettings('config/login_config.ini', QSettings.IniFormat)
         self.settings.setIniCodec('utf-8')
@@ -409,7 +400,15 @@ class Auction(QObject):
         self.username = user_name(self.login)
         self.win.setWindowTitle(f'{PROJECT} | {self.username}')
 
+        path_dir = os.getcwd()
         self.dir_setting = F'config/{self.username}/'
+        try:
+            os.mkdir(f'{path_dir}/{self.dir_setting}')
+        except OSError:
+            print("Creation of the directory %s failed" % self.dir_setting)
+        else:
+            print("Successfully created the directory %s " % self.dir_setting)
+
         self.recourse = url_auction(self.login, self.dir_setting)
 
         self.dir_setting = F'config/{self.username}/'
@@ -1038,8 +1037,8 @@ class Auction(QObject):
 
         # если есть объекты, то ставим ставки
         time_bet_start = random.randrange(30, 50, 1)  # рандом (начальное значение, конечное значение, шаг)
-        if int(self.time_minute) <= time_bet_start and len(self.bet_list) != 0 and self.start.isChecked():
-            # if len(self.bet_list) != 0 and self.start.isChecked():
+        # if int(self.time_minute) <= time_bet_start and len(self.bet_list) != 0 and self.start.isChecked():
+        if len(self.bet_list) != 0 and self.start.isChecked():
             print(self.bet_list)
             self.bet_run(self.bet_list)
         else:
@@ -1074,30 +1073,23 @@ class Auction(QObject):
 
             loot_id = self.table.item(row[1], 2).toolTip()
             item_id = 'item_hour_' + str(row[1])
-            shop = url_auction(self.login, self.dir_setting)
 
-            if shop[0] is None:
-                break
+            if not self.browser.status_captcha:
+
+                self.browser.bet = bet
+                self.browser.loot_id = loot_id
+                self.browser.item_id = item_id
+
+                self.browser.reload_page()
+
+                print('Ставим ставку', row[0], item_id, bet)
+                logging.info('Bet on ' + row[0] + ' : ' + str(bet))  # ------ log bet --------
+
             else:
-                url = shop[0].url
-
-                if not self.browser.status_recaptcha:
-
-                    print(self.browser.status_recaptcha)
-                    self.browser.bet = bet
-                    self.browser.loot_id = loot_id
-                    self.browser.item_id = item_id
-
-                    self.browser.reload_page()
-                    print('Ставим ставку', row[0], item_id, bet)
-                    logging.info('Bet on ' + row[0] + ' : ' + str(bet))  # ------ log bet --------
-
-                else:
-                    self.start.setChecked(False)
-                    self.start_on_off()
-                    logging.info('################## Auction bot caught reCaptcha ##################')  # ------ log bet --------
-                    print('Stop Auction bot, reCaptcha')
-                    break
+                self.start.setChecked(False)
+                self.start_on_off()
+                print('Stop Auction bot, reCaptcha')
+                break
 
             bet = None
         # запускаем  таймер обновление таблицы
