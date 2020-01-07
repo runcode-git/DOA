@@ -43,7 +43,7 @@ def get_info(info):
 NAME = get_info("name")
 VERSION = get_info("version")
 PROJECT = f"{NAME} {VERSION}"
-ICON = f'{str(NAME).lower()}.ico'
+ICON = f'doa.ico'
 
 
 class LoginInUserThread(QThread):
