@@ -1037,8 +1037,8 @@ class Auction(QObject):
 
         # если есть объекты, то ставим ставки
         time_bet_start = random.randrange(30, 50, 1)  # рандом (начальное значение, конечное значение, шаг)
-        # if int(self.time_minute) <= time_bet_start and len(self.bet_list) != 0 and self.start.isChecked():
-        if len(self.bet_list) != 0 and self.start.isChecked():
+        if int(self.time_minute) <= time_bet_start and len(self.bet_list) != 0 and self.start.isChecked():
+            # if len(self.bet_list) != 0 and self.start.isChecked():
             print(self.bet_list)
             self.bet_run(self.bet_list)
         else:
@@ -1058,40 +1058,45 @@ class Auction(QObject):
         self.stop_update.emit()
         self.bet_list = []
 
-        for row in list_lot:
-            # ----время, через сколько делать ставку
-            if bet is None:
-                bet_time = random.uniform(2, 4)
-                time.sleep(bet_time)
-                max_bet = self.table.item(row[1], 4).text()
-                bet_random = random.randrange(10000, int(filter_int(max_bet)) / 2, 10000)
-                bet_current = filter_int(self.table.item(row[1], 2).text())
-                if int(bet_current) == 0:
-                    bet = int(bet_random)
+        try:
+            for row in list_lot:
+                # ----время, через сколько делать ставку
+                if bet is None:
+                    bet_time = random.uniform(2, 4)
+                    time.sleep(bet_time)
+                    max_bet = self.table.item(row[1], 4).text()
+                    bet_random = random.randrange(10000, int(filter_int(max_bet)) / 2, 10000)
+                    bet_current = filter_int(self.table.item(row[1], 2).text())
+                    if int(bet_current) == 0:
+                        bet = int(bet_random)
+                    else:
+                        bet = int(bet_current) + int(random.randrange(10000, 1000000, 10000))
+
+                loot_id = self.table.item(row[1], 2).toolTip()
+                item_id = 'item_hour_' + str(row[1])
+
+                if not self.browser.status_captcha:
+
+                    self.browser.bet = bet
+                    self.browser.loot_id = loot_id
+                    self.browser.item_id = item_id
+
+                    self.browser.reload_page()
+
+                    print('Ставим ставку', row[0], item_id, bet)
+                    logging.info('Bet on ' + row[0] + ' : ' + str(bet))  # ------ log bet --------
+
                 else:
-                    bet = int(bet_current) + int(random.randrange(10000, 1000000, 10000))
+                    self.start.setChecked(False)
+                    self.start_on_off()
+                    print('Stop Auction bot, reCaptcha')
+                    break
 
-            loot_id = self.table.item(row[1], 2).toolTip()
-            item_id = 'item_hour_' + str(row[1])
+                bet = None
 
-            if not self.browser.status_captcha:
+        except Exception as e:
+            print('Ошибка:\n', traceback.format_exc())
 
-                self.browser.bet = bet
-                self.browser.loot_id = loot_id
-                self.browser.item_id = item_id
-
-                self.browser.reload_page()
-
-                print('Ставим ставку', row[0], item_id, bet)
-                logging.info('Bet on ' + row[0] + ' : ' + str(bet))  # ------ log bet --------
-
-            else:
-                self.start.setChecked(False)
-                self.start_on_off()
-                print('Stop Auction bot, reCaptcha')
-                break
-
-            bet = None
         # запускаем  таймер обновление таблицы
         self.update_table_thread()
         self.start_update.emit()
