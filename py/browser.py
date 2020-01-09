@@ -56,7 +56,7 @@ class Browser(QWebEngineView):
             url_auction = f'{self.url}//indexInternal.es?action=internalAuction'
             self.setWindowTitle(url_auction)
             self.request.setUrl(QtCore.QUrl(url_auction))
-
+            # https://ru1.darkorbit.com/indexInternal.es?action=internalAuction?dosid=6828865cad41a7bde94222a31d3b7b2d
             self.page().load(self.request)
 
         @thread

@@ -25,8 +25,7 @@ def parse_version():
     try:
         get_html = session_update.get(url_bot, headers=headers, proxies=proxy)
         tree = html.fromstring(get_html.text)
-        version = tree.xpath('//a[@class = "btn btn-success btn-sm"]/@title')[0].upper()
-        print(version.strip())
+        version = tree.xpath('//a[@class = "btn btn-success btn-sm"]/@title')[0]
         return version.strip()
     except requests.exceptions.ConnectionError:
         return False

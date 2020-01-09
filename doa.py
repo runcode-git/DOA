@@ -465,7 +465,10 @@ class Auction(QObject):
         self.btn_donate.setStyleSheet("QPushButton {background-color: rgb(125, 102, 8); color: #ccc;}")
         self.pb.setStyleSheet("QProgressBar {font: 9pt 'Verdana'; color: #fff;}")
 
-        if PROJECT != self.version_bot:
+        print(PROJECT.strip())
+        print(self.version_bot)
+
+        if PROJECT.strip() != self.version_bot:
             self.btn_update_bot.setStyleSheet("QPushButton {background-color: rgb(98, 132, 14); color: #fff}")
             self.btn_update_bot.setText(f"UPDATE {self.version_bot}")
         else:
